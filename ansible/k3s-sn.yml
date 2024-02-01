@@ -1,0 +1,64 @@
+- hosts: all
+  vars_files:
+    - ../../secrets/containerhost-setup/ansible-vars.yml
+  handlers:
+  - name: Restart sshd
+    ansible.builtin.service:
+      name=sshd
+      state=restarted
+
+  tasks:
+  # Configure SSHD
+  - name: Ensure temp folder creation
+    ansible.builtin.shell:
+      cmd: "systemd-tmpfiles --create /usr/lib/tmpfiles.d/sshd.conf"
+      creates: /run/sshd
+  - name: Configure sshd
+    ansible.builtin.lineinfile:
+      path: "/etc/ssh/sshd_config"
+      regex: "^#*\\s*{{item.key}}\\s*(yes|no)$"
+      line: "{{item.key}} {{item.value}}"
+      state: present
+    loop:
+      - { key: "UsePAM", value: "no" }
+      - { key: "PasswordAuthentication", value: "no" } 
+    notify:
+      - Restart sshd
+
+  # Prepare and install Docker
+#  - name: Add Docker repo
+#    ansible.builtin.deb822_repository:
+#      name: docker
+#      types: [deb]
+#      uris: https://download.docker.com/linux/debian
+#      suites: [bullseye]
+#      components: [stable]
+#      signed_by: https://download.docker.com/linux/debian/gpg
+#      enabled: true
+#  - name: Install Docker
+#    ansible.builtin.apt:
+#      update_cache: yes
+#      pkg:
+#      - docker-ce
+#      - docker-ce-cli
+#      - containerd.io
+#      - docker-compose
+#      - docker-compose-plugin
+
+  # Install cUrl
+  - name: Install cUrl
+    ansible.builtin.apt:
+      update_cache: yes
+      name: curl
+
+  # Install Prometheus node exporter
+  - name: Install Prometheus node exporter
+    ansible.builtin.apt:
+      update_cache: yes
+      name: prometheus-node-exporter
+
+  # Install k3s
+  - name: Install k3s
+    ansible.builtin.shell:
+      cmd: "curl -sfL https://get.k3s.io | sh -"
+      creates: /usr/local/bin/k3s
