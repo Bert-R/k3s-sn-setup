@@ -1,4 +1,4 @@
-# Set up Docker on an LXC container on Proxmox through Terraform and Ansible
+# Set up k3s on an LXC container on Proxmox through Terraform and Ansible
 
 Next to this checkout, a directory structure of the following form is required:
 
